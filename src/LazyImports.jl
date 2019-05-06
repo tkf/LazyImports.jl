@@ -87,7 +87,8 @@ end
     @shim_import Module
     @shim_import Module = UUID
 
-See `?@lazy_import`.
+This acts like `@lazy_import` except that `Module.f` works only if
+`Module` is already loaded.
 """
 macro shim_import(expr)
     esc(import_expr(ShimModule, __module__, expr))
@@ -98,9 +99,9 @@ end
     @lazy_import Module = UUID
 
 Construct a module-like object for `Module`.  Accessing `Module.f`
-imports and then get `f` from `Module`.  The `UUID` can be omitted if
-`Module` is listed in `[deps]` or `[extras]` of `Project.toml` file of
-the package using `@lazy_import`.
+imports `Module` and then get `f` from `Module`.  The `UUID` can be
+omitted if `Module` is listed in `[deps]` or `[extras]` of
+`Project.toml` file of the package using `@lazy_import`.
 """
 macro lazy_import(expr)
     esc(import_expr(LazyModule, __module__, expr))
