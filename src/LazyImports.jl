@@ -50,24 +50,31 @@ function _uuidfor(__module__::Module, name::Symbol)
             $tomlpath
         """)
     end
-    pkg = TOML.parsefile(tomlpath)
-    found = get(get(pkg, "deps", Dict()), String(name), false) ||
-        get(get(pkg, "extras", Dict()), String(name), nothing)
+
+    found = find_uuid_or(TOML.parsefile(tomlpath), String(name)) do
+        error("""
+Package `$name` is not listed in `[deps]` or `[extras]` of `Project.toml`
+file for `$(nameof(root))` found at:
+    $tomlpath
+If you are developing `$(nameof(root))`, add `$name` to the dependency.
+Otherwise, please report this to `$(nameof(root))`'s issue tracker.
+""")
+    end
 
     # Just to be extremely careful, editing Project.toml should
     # invalidate the compilation cache since the UUID may be changed
     # or removed:
     include_dependency(tomlpath)
 
-    found !== nothing && return UUID(found)
-    error("""
-    Package `$name` is not listed in `[deps]` or `[extras]` of `Project.toml`
-    file for `$(nameof(root))` found at:
-        $tomlpath
-    If you are developing `$(nameof(root))`, add `$name` to the dependency.
-    Otherwise, please report this to `$(nameof(root))`'s issue tracker.
-    """)
+    return UUID(found)
 end
+
+find_uuid_or(f, project::Dict, name::String) =
+    get(get(project, "deps", Dict()), name) do
+        get(get(project, "extras", Dict()), name) do
+            f()
+        end
+    end
 
 _uuid(id::UUID) = id
 _uuid(id) = UUID(id)
